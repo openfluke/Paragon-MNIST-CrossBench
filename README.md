@@ -84,3 +84,72 @@ Epoch 2, Loss: 2.3026
 - The example limits the number of training samples for faster execution. Adjust the `trainLimit` constant in the code to train on the full dataset.
 - WebGPU support requires compatible hardware and drivers.
 - The `[wgpu] [Warn]` message may appear on some systems but does not affect functionality.
+
+## Building Executables
+
+To build the application for multiple platforms, use the provided `build-all.sh` script:
+
+```bash
+sh build-all.sh
+```
+
+## Setting Up Cross-Compilation for Windows
+
+To cross-compile the Go project for Windows on Fedora or Ubuntu, you need to install the MinGW-w64 toolchain. Below are the setup instructions for each distribution, followed by building the executables.
+
+### Setup Script
+
+Save the following script as `setup-cross-compile.sh` to install the necessary tools:
+
+```bash
+#!/bin/bash
+
+echo "🚀 Setting up cross-compilation environment for Windows..."
+
+# Detect the Linux distribution
+if [ -f /etc/fedora-release ]; then
+    echo "🔧 Detected Fedora, installing mingw64-gcc..."
+    sudo dnf install -y mingw64-gcc mingw64-gcc-c++
+elif [ -f /etc/lsb-release ] || [ -f /etc/debian_version ]; then
+    echo "🔧 Detected Ubuntu, installing gcc-mingw-w64..."
+    sudo apt-get update
+    sudo apt-get install -y gcc-mingw-w64 g++-mingw-w64
+else
+    echo "❌ Unsupported distribution. This script supports Fedora and Ubuntu."
+    exit 1
+fi
+
+echo "✅ Setup complete! You can now cross-compile for Windows."
+```
+
+### Explanation
+
+- **Fedora**: Installs `mingw64-gcc` and `mingw64-gcc-c++` for C and C++ cross-compilation support, as required for Go's CGO if needed (e.g., for dependencies like `go-webgpu`).[](https://stackoverflow.com/questions/41566495/golang-how-to-cross-compile-on-linux-for-windows)
+- **Ubuntu**: Installs `gcc-mingw-w64` and `g++-mingw-w64` to provide the Windows cross-compiler toolchain.[](https://stackoverflow.com/questions/41566495/golang-how-to-cross-compile-on-linux-for-windows)
+- **Script Logic**: Detects the distribution by checking for `/etc/fedora-release` (Fedora) or `/etc/lsb-release`/`/etc/debian_version` (Ubuntu), then installs the appropriate packages.
+- **Integration**: This setup ensures compatibility with your `build-all.sh` script, which builds for Windows (amd64/arm64) among other platforms.
+
+### Addressing Your Error
+
+The error you encountered (`undefined: Limits` in `go-webgpu/wgpu`) suggests a dependency issue with the `go-webgpu` package, likely due to an outdated or incompatible version. To resolve:
+
+1. Update the dependency in your `go.mod`:
+   ```bash
+   go get github.com/rajveermalviya/go-webgpu/wgpu@latest
+   ```
+
+### To build from linux to windows you will need to install
+
+```
+go get github.com/rajveermalviya/go-webgpu/wgpu@latest
+```
+
+### Also this could help if on fedora
+
+```
+sudo dnf install -y mingw64-gcc mingw64-gcc-c++
+```
+
+### Disabled Platforms
+
+Support for ARM (`windows/arm64`, `linux/arm64`) and macOS (`darwin/amd64`, `darwin/arm64`) targets is disabled in the `build-all.sh` script for Linux x86_64 environments to avoid dependency conflicts and ensure build stability.
