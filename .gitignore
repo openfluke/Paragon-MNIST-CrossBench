@@ -1,3 +1,5 @@
 data
-mnist_model_float32.json
+*.json
 build
+paragon-linux
+paragon-windows.exe

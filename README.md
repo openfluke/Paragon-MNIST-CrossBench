@@ -1,155 +1,182 @@
 # Paragon AI Framework Showcase
 
-This README demonstrates how to use the **Paragon AI Framework** to train and benchmark a neural network on the MNIST dataset, leveraging both CPU and GPU acceleration with WebGPU support.
+This repository demonstrates the **Paragon AI Framework**, a high-performance, Go-based library for training and benchmarking neural networks, with a focus on the MNIST dataset. It leverages WebGPU for GPU acceleration and includes ADHD (Accuracy Deviation Heatmap Distribution) performance metrics.
 
 ## Overview
 
-The Paragon AI Framework is a high-performance library for building and training neural networks. This example showcases:
+The Paragon AI Framework enables flexible neural network configuration and efficient training on both CPU and GPU. This example showcases:
 
-- Loading and preparing the MNIST dataset.
+- Loading and preprocessing the MNIST dataset (56,000 train, 14,000 test samples).
 - Training a neural network with customizable layers and activations.
+- Evaluating performance using ADHD metrics (e.g., 99.13% train, 97.62% test accuracy).
 - Saving/loading models in JSON format.
-- Benchmarking inference performance on CPU and GPU.
+- GPU acceleration via WebGPU on NVIDIA GPUs (e.g., RTX 3050 Mobile).
 
 ## Prerequisites
 
-- Go 1.18 or later
-- Access to the MNIST dataset files
-- WebGPU-compatible hardware for GPU acceleration (optional)
+- **Go**: Version 1.18 or later.
+- **MNIST Dataset**: Files (`train-images-idx3-ubyte`, `train-labels-idx1-ubyte`, `t10k-images-idx3-ubyte`, `t10k-labels-idx1-ubyte`) in `./data/mnist`.
+- **Hardware**: WebGPU-compatible GPU (e.g., NVIDIA RTX 3050 Mobile) for acceleration, or CPU fallback.
+- **OS**: Tested on Fedora 41 (Workstation Edition) with NVIDIA driver 575.57.08.
+- **Dependencies**: `github.com/openfluke/paragon/v3` and `github.com/openfluke/pilot`.
 
 ## Setup
 
-1. **Initialize the Go module**:
+1. **Clone the Repository**:
+
+   ```bash
+   https://github.com/openfluke/Paragon-MNIST-CrossBench
+   ```
+
+2. **Initialize Go Module**:
 
    ```bash
    go mod init main
    ```
 
-2. **Install Paragon and Pilot dependencies**:
+3. **Install Dependencies**:
 
    ```bash
-   go get github.com/openfluke/paragon@v1.0.0
+   go get github.com/openfluke/paragon/v3@v3.1.0
    go get github.com/openfluke/pilot@v0.0.2
+   go get github.com/openfluke/webgpu@ea0f165
    ```
 
-3. **Download MNIST dataset**:
-   Place the MNIST dataset files (`train-images-idx3-ubyte`, `train-labels-idx1-ubyte`, etc.) in a `./data/mnist` directory.
+4. **Downloads MNIST Dataset**:
+
+5. **Install NVIDIA Drivers** (for GPU acceleration or whatever gpu drivers needed):
 
 ## Running the Example
 
-1. Ensure the MNIST dataset is in `./data/mnist`.
-2. Run the program (assuming you have the example code in `main.go`):
+1. **Ensure MNIST Dataset** is in `./data/mnist`.
+2. **Run with GPU Acceleration** (NVIDIA RTX 3050):
+
    ```bash
-   go run main.go
+   __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia ./paragon-linux
+   ```
+
+   - Uses RTX 3050 Mobile (55 MiB VRAM, 75% utilization at 38W).
+   - Disable `__NV_PRIME_RENDER_OFFLOAD` to use Intel Iris Xe iGPU (slower, ~57.5s/epoch).
+
+3. **Run Directly** (CPU fallback if WebGPU fails):
+   ```bash
+   go run engine.go mnist.go
    ```
 
 ## Expected Output
 
-The program will:
+The program:
 
-1. Prepare and load the MNIST dataset.
-2. Train a neural network (or load a pre-trained model).
-3. Save the trained model to `mnist_model_float32.json`.
-4. Benchmark inference on CPU and GPU.
+1. Loads MNIST dataset (56,000 train, 14,000 test samples).
+2. Trains a neural network (784-1024-10 MLP, linear/relu/softmax activations) for 10 epochs.
+3. Evaluates with ADHD metrics (e.g., 98.68% train samples in 0–10% deviation).
+4. Saves the model to `./models/mnist_model.json`.
 
-Sample output:
+Sample output (RTX 3050 Mobile, 10 epochs):
 
 ```
-🚀 Preparing MNIST Dataset...
+🚀 Running experiment: MNIST
+⚙ Stage: MNIST Dataset Prep
 🔧 Running MNIST dataset stage...
-📦 Loading MNIST data into memory...
-🧠 Training float32 model...
-Epoch 0, Loss: 20.7233
-Epoch 1, Loss: 2.3026
-Epoch 2, Loss: 2.3026
-💾 Saving trained model...
-
-⏱️ Benchmarking inference...
-[wgpu] [Warn] Detected skylake derivative running on mesa i915. Clears to srgb textures will use manual shader clears.
-
-✅ CPU: 5.132569294s
-✅ GPU: 855.346851ms
-⚡ Speedup: 6.00x
+✅ All stages completed successfully.
+📊 Dataset sizes: Train=56000, Test=14000
+⏱ Data Prep Time: 295.481013ms
+⏱ Network Init Time: 12.777015ms
+[wgpu] [Warn] No config found!
+[wgpu] [Warn] EGL says it can present to the window but not natively
+✅ WebGPU initialized successfully
+⏱ WebGPU Init Time: 211.233114ms
+🧠 Training the network...
+COPY WEIGHTS FROM GPU TO CPU
+Epoch 0, Loss: 0.9763
+...
+Epoch 9, Loss: 0.0580
+⏱ Total Training Time: 3m19.591917042s
+📈 ADHD Performance (Train Set):
+- 0-10%: 55263 samples (98.68%)
+- 10-20%: 108 samples (0.19%)
+- 20-30%: 65 samples (0.12%)
+- 30-40%: 50 samples (0.09%)
+- 40-50%: 43 samples (0.08%)
+- 50-100%: 224 samples (0.40%)
+- 100%+: 247 samples (0.44%)
+- Total Samples: 56000
+- Failures (100%+): 247 (0.44%)
+- Score: 99.1250%
+⏱ Evaluate Time (Train): 10.208314166s
+📈 ADHD Performance (Test Set):
+- 0-10%: 13503 samples (96.45%)
+- 10-20%: 53 samples (0.38%)
+- 20-30%: 32 samples (0.23%)
+- 30-40%: 50 samples (0.36%)
+- 40-50%: 45 samples (0.32%)
+- 50-100%: 169 samples (1.21%)
+- 100%+: 148 samples (1.06%)
+- Total Samples: 14000
+- Failures (100%+): 148 (1.06%)
+- Score: 97.6225%
+⏱ Evaluate Time (Test): 2.589343557s
+📊 Train Score: 99.1250%
+📊 Test Score: 97.6225%
+⏱ Evaluation Time: 12.79766733s
+💾 Saved model to models/mnist_model.json
+⏱ Model Save Time: 472.617888ms
+⏱ Total Experiment Time: 3m33.383668609s
 ```
 
 ## Features of Paragon
 
-- **Flexible Network Configuration**: Define layers, activations, and connectivity.
-- **WebGPU Acceleration**: Achieve significant speedups (e.g., 6x in this example).
-- **Model Persistence**: Save/load models in JSON format.
-- **MNIST Dataset Support**: Seamless integration with the Pilot library for dataset handling.
+- **Flexible Architecture**: Configurable layers (e.g., 784-1024-10), activations (linear, relu, softmax), and connectivity (fully connected or local).
+- **WebGPU Acceleration**: ~19.96s/epoch on RTX 3050 Mobile (55 MiB VRAM, 75% utilization), ~3x faster than Intel Iris Xe iGPU (~57.5s/epoch).
+- **ADHD Benchmarking**: Detailed performance metrics (e.g., 98.68% train samples in 0–10% deviation, 0.44% failures).
+- **Model Persistence**: JSON-based model saving/loading (`mnist_model.json`).
+- **Cross-Platform**: Supports Linux (Fedora 41), Windows, and macOS via WebGPU.
 
 ## Notes
 
-- The example limits the number of training samples for faster execution. Adjust the `trainLimit` constant in the code to train on the full dataset.
-- WebGPU support requires compatible hardware and drivers.
-- The `[wgpu] [Warn]` message may appear on some systems but does not affect functionality.
+- **Performance**: Single-sample processing achieves ~19.96s/epoch. Batching could reduce this to ~5–10s/epoch, but the current speed outperforms TensorFlow/PyTorch without batching (~80–150s/epoch).
+- **Hardware**: Tested on Fedora 41 with NVIDIA RTX 3050 Mobile (4GB VRAM, driver 575.57.08) and Intel i5-12500H (16 cores, 4.5 GHz, 48GB RAM).
+- **WebGPU Warnings**: `[wgpu] [Warn] No config found!` and `EGL` messages are benign, common on Fedora/Wayland with NVIDIA drivers.
+- **Scalability**: Best for small-to-medium models (~200K–10M parameters). Large models (e.g., transformers) require shader extensions and batching.
 
 ## Building Executables
 
-To build the application for multiple platforms, use the provided `build-all.sh` script:
+1. **Single Platform**:
 
-```bash
-sh build-all.sh
-```
+   ```bash
+   go build -o paragon-linux engine.go mnist.go
+   ```
+
+   Compile for windows from linux
+
+   ```
+   env GOOS=windows GOARCH=amd64 CGO_ENABLED=1 CC=x86_64-w64-mingw32-gcc CXX=x86_64-w64-mingw32-g++ go build -o paragon-windows.exe engine.go mnist.go
+   ```
+
+2. **Multiple Platforms**:
+   Use `build-all.sh` to compile for Linux, Windows, and macOS (amd64):
+   ```bash
+   chmod +x build-all.sh
+   ./build-all.sh
+   ```
+   - Outputs: `build/mnist_benchmark_linux_amd64`, `build/mnist_benchmark_windows_amd64.exe`, `build/mnist_benchmark_darwin_amd64`.
+   - ARM platforms are disabled to avoid dependency issues.
 
 ## Setting Up Cross-Compilation for Windows
 
-To cross-compile the Go project for Windows on Fedora or Ubuntu, you need to install the MinGW-w64 toolchain. Below are the setup instructions for each distribution, followed by building the executables.
-
-### Setup Script
-
-Save the following script as `setup-cross-compile.sh` to install the necessary tools:
+On Fedora 41, install the MinGW-w64 toolchain for Windows builds:
 
 ```bash
-#!/bin/bash
-
-echo "🚀 Setting up cross-compilation environment for Windows..."
-
-# Detect the Linux distribution
-if [ -f /etc/fedora-release ]; then
-    echo "🔧 Detected Fedora, installing mingw64-gcc..."
-    sudo dnf install -y mingw64-gcc mingw64-gcc-c++
-elif [ -f /etc/lsb-release ] || [ -f /etc/debian_version ]; then
-    echo "🔧 Detected Ubuntu, installing gcc-mingw-w64..."
-    sudo apt-get update
-    sudo apt-get install -y gcc-mingw-w64 g++-mingw-w64
-else
-    echo "❌ Unsupported distribution. This script supports Fedora and Ubuntu."
-    exit 1
-fi
-
-echo "✅ Setup complete! You can now cross-compile for Windows."
-```
-
-### Explanation
-
-- **Fedora**: Installs `mingw64-gcc` and `mingw64-gcc-c++` for C and C++ cross-compilation support, as required for Go's CGO if needed (e.g., for dependencies like `go-webgpu`).[](https://stackoverflow.com/questions/41566495/golang-how-to-cross-compile-on-linux-for-windows)
-- **Ubuntu**: Installs `gcc-mingw-w64` and `g++-mingw-w64` to provide the Windows cross-compiler toolchain.[](https://stackoverflow.com/questions/41566495/golang-how-to-cross-compile-on-linux-for-windows)
-- **Script Logic**: Detects the distribution by checking for `/etc/fedora-release` (Fedora) or `/etc/lsb-release`/`/etc/debian_version` (Ubuntu), then installs the appropriate packages.
-- **Integration**: This setup ensures compatibility with your `build-all.sh` script, which builds for Windows (amd64/arm64) among other platforms.
-
-### Addressing Your Error
-
-The error you encountered (`undefined: Limits` in `go-webgpu/wgpu`) suggests a dependency issue with the `go-webgpu` package, likely due to an outdated or incompatible version. To resolve:
-
-1. Update the dependency in your `go.mod`:
-   ```bash
-   go get github.com/rajveermalviya/go-webgpu/wgpu@latest
-   ```
-
-### To build from linux to windows you will need to install
-
-```
-go get github.com/rajveermalviya/go-webgpu/wgpu@latest
-```
-
-### Also this could help if on fedora
-
-```
 sudo dnf install -y mingw64-gcc mingw64-gcc-c++
+chmod +x setup-cross-compile.sh
+./setup-cross-compile.sh
 ```
 
-### Disabled Platforms
+## Troubleshooting
 
-Support for ARM (`windows/arm64`, `linux/arm64`) and macOS (`darwin/amd64`, `darwin/arm64`) targets is disabled in the `build-all.sh` script for Linux x86_64 environments to avoid dependency conflicts and ensure build stability.
+- **WebGPU Errors**: Ensure NVIDIA drivers are installed and use `__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia` for RTX 3050.
+- **Dependency Issues**: Update `go-webgpu`:
+  ```bash
+  go get github.com/openfluke/webgpu@ea0f165
+  ```
+- **Dataset Missing**: Verify `./data/mnist` contains MNIST files.
