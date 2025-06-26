@@ -37,9 +37,9 @@ The Paragon AI Framework enables flexible neural network configuration and effic
 3. **Install Dependencies**:
 
    ```bash
-   go get github.com/openfluke/paragon/v3@v3.1.0
+   go get github.com/openfluke/paragon/v3@v3.1.3
    go get github.com/openfluke/pilot@v0.0.2
-   go get github.com/openfluke/webgpu@ea0f165
+   go get github.com/openfluke/webgpu@v0.0.1
    ```
 
 4. **Downloads MNIST Dataset**:
