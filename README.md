@@ -12,6 +12,14 @@ The Paragon AI Framework enables flexible neural network configuration and effic
 - Saving/loading models in JSON format.
 - GPU acceleration via WebGPU on NVIDIA GPUs (e.g., RTX 3050 Mobile).
 
+## Install nvidia and vulkan if needed
+
+```bash
+sudo dnf install https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+sudo dnf update
+sudo dnf install akmod-nvidia xorg-x11-drv-nvidia vulkan vulkan-tools
+```
+
 ## Prerequisites
 
 - **Go**: Version 1.18 or later.
